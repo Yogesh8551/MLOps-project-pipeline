@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Manager (DB + ML)</title>
+</head>
+<body>
+
+<h2>Task Manager (DB + ML)</h2>
+
+<input type="text" id="taskInput" placeholder="Enter task">
+<button onclick="addTask()">Add</button>
+
+<ul id="taskList"></ul>
+
+<hr>
+
+<h3>ML Pipeline Simulator</h3>
+
+<button onclick="runML()">Run ML Only</button>
+<button onclick="runPipeline()">Run Full Pipeline</button>
+
+<p id="mlOutput"></p>
+<div id="pipelineOutput"></div>
+
+<script>
+
+// Load tasks when page opens
+async function loadTasks() {
+    let res = await fetch('/tasks');
+    let data = await res.json();
+
+    let list = document.getElementById("taskList");
+    list.innerHTML = "";
+
+    data.forEach((task) => {
+        let li = document.createElement("li");
+        li.innerHTML = task.name + " - " + (task.done ? "✅" : "❌");
+
+        let btn = document.createElement("button");
+        btn.innerText = "Complete";
+        btn.onclick = async () => {
+            await fetch('/task/' + task.id, {method: 'PUT'});
+            loadTasks();
+        };
+
+        li.appendChild(btn);
+        list.appendChild(li);
+    });
+}
+
+// Add new task
+async function addTask() {
+    let input = document.getElementById("taskInput").value;
+    await fetch('/task?name=' + input, {method: 'POST'});
+    loadTasks();
+}
+
+// Run only ML logic
+async function runML() {
+    let res = await fetch('/run-ml');
+    let data = await res.json();
+
+    document.getElementById("mlOutput").innerHTML =
+        "Changed File: " + data.changed_file +
+        "<br>Selected Tests: " + data.selected_tests.join(", ");
+}
+
+// Run full pipeline (ML + Tests)
+async function runPipeline() {
+    let res = await fetch('/run-pipeline');
+    let data = await res.json();
+
+    let output = "<h4>Tests Selected:</h4>" + data.tests.join(", ");
+
+    output += "<h4>Test Results:</h4>";
+
+    data.results.forEach(r => {
+        output += "<pre>" + r + "</pre>";
+    });
+
+    document.getElementById("pipelineOutput").innerHTML = output;
+}
+
+// IMPORTANT: auto load tasks
+loadTasks();
+
+</script>
+
+</body>
+</html>

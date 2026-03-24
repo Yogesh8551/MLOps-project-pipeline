@@ -13,11 +13,11 @@ jobs:
 
     steps:
 
-    # 1️⃣ Get code from repo
+    # 1️⃣ Checkout code
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # 2️⃣ Detect changed files (REAL instead of echo)
+    # 2️⃣ Detect changed files
     - name: Get changed files
       run: |
         git fetch origin main
@@ -36,21 +36,25 @@ jobs:
       run: |
         pip install -r requirements.txt
 
-    # 5️⃣ Run ML model
+    # ✅ 5️⃣ FIX: Set PYTHONPATH
+    - name: Set PYTHONPATH
+      run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+
+    # 6️⃣ Run ML model
     - name: Run ML predictor
       run: |
         python ml/predict.py
         echo "Selected tests:"
         cat tests_to_run.txt
 
-    # 6️⃣ Run only selected tests
+    # 7️⃣ Run selected tests
     - name: Run selected tests
       run: |
         while read test; do
           echo "Running $test"
-          pytest tests/$test
+          python -m pytest tests/$test
         done < tests_to_run.txt
 
-    # 7️⃣ Success message
+    # 8️⃣ Success message
     - name: Pipeline completed
       run: echo "✅ ML Pipeline executed successfully"
